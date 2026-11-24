@@ -1,0 +1,45 @@
+server:
+  port: 9000
+
+spring:
+  security:
+    user:
+      # user credentials
+      name: user
+      password: password
+    oauth2:
+      authorizationserver:
+        # identifier for auth server
+        issuer: http://localhost:9000
+        # client part is for want to access configured resources on behalf of user
+        # (like react front, mobile app, another spring app, third party app)
+        client:
+          demo-client:
+            registration:
+              #public identifier, client use this to identify and commune auth server
+              # TODO: client-id: ${CLIENT_ID:demo-client} replaced
+              client-id: demo-client
+              # like username, used by client to auth itself (will be removed later)
+              client-secret: "{noop}secret"
+              # client_secret_basic -> client send clientID and secret via HTTPA basic auth when commune with token endpoint
+              client-authentication-methods:
+                - client_secret_basic
+              # 1. authorization_code (client request auth -> auth server redirect user to login
+              # -> user auth and approve consent, auth server issues auth code -> client app exchanges code for token)
+              # this is done instead of client generate jwt token inside client app via authorization token (exchange for tokens)
+              # 2. refresh_token make it easier to get access token (client obtain access token -> it expires
+              # -> client send refresh token to /oauth2/token -> server issues new access token if valid)
+              authorization-grant-types:
+                - authorization_code
+                - refresh_token
+              # where auth server send user after auth. loopback used here for public internet risks
+              # TODO: redirect-uris: ${CLIENT_REDIRECT_URI:http://127.0.0.1:8080/login/oauth2/code/demo-client} replaced in the future
+              redirect-uris: http://127.0.0.1:8080/login/oauth2/code/demo-client
+              # what info or access client is requesting
+              scopes:
+                - openid                    # user requests OpenID Connect authentication
+                - profile                   # user request access to standard user profile  info (name, username, profile info)
+            # require user to approve requested scopes
+            require-authorization-consent: true
+            # PKCE protects the authorization code flow against authorization-code interception. we make PKCE mandatory
+            require-proof-key: true
